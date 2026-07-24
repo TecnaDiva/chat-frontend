@@ -23,42 +23,54 @@ function App() {
   // 2. Dinleyicileri Ekle ve Bağlantıyı Çalıştır
   useEffect(() => {
     if (connection) {
+
+      // DİNLEYİCİLERİ BAĞLANTI BAŞLAMADAN ÖNCE TANIMLIYORUZ (Sinyal kaçırmamak için)
+      
+      // Grup mesajı geldiğinde
+      connection.on('ReceiveGroupMessage', (room, receivedUser, receivedMessage) => {
+        setChat(prev => [...prev, { room, user: receivedUser, message: receivedMessage, isPrivate: false }]);
+      });
+
+      // Özel mesaj geldiğinde
+      connection.on('ReceivePrivateMessage', (senderId, receivedUser, receivedMessage) => {
+        setChat(prev => [...prev, { room: senderId, user: receivedUser, message: receivedMessage, isPrivate: true }]);
+      });
+
+      // O anki tüm kullanıcı listesi geldiğinde
+      connection.on('UserList', (users) => {
+        const myId = connection.connectionId;
+        // Kendimizi listeden çıkarıp kalan aktif kişileri gösteriyoruz
+        const filteredUsers = users.filter(u => u !== myId);
+        setActiveUsers(filteredUsers);
+      });
+
+      // Yeni biri katıldığında
+      connection.on('UserJoined', (newConnectionId) => {
+        const myId = connection.connectionId;
+        if (newConnectionId !== myId) {
+          setActiveUsers(prev => {
+            if (!prev.includes(newConnectionId)) {
+              return [...prev, newConnectionId];
+            }
+            return prev;
+          });
+        }
+      });
+
+      // Biri ayrıldığında
+      connection.on('UserLeft', (disconnectedId) => {
+        setActiveUsers(prev => prev.filter(u => u !== disconnectedId));
+        setTarget(currentTarget => currentTarget === disconnectedId ? 'Genel' : currentTarget);
+      });
+
+      // BAĞLANTIYI BAŞLAT
       connection.start()
         .then(() => {
           console.log('SignalR Bağlantısı Başarıyla Kuruldu!');
 
-          // İlk bağlantıda otomatik olarak Genel ve Yazılım odalarına katılalım
+          // Bağlantı kurulduktan sonra odalara katıl
           connection.invoke("JoinRoom", "Genel").catch(err => console.error(err));
           connection.invoke("JoinRoom", "Yazılım").catch(err => console.error(err));
-
-          // Event Dinleyicileri
-          connection.on('ReceiveGroupMessage', (room, receivedUser, receivedMessage) => {
-            setChat(prev => [...prev, { room, user: receivedUser, message: receivedMessage, isPrivate: false }]);
-          });
-
-          connection.on('ReceivePrivateMessage', (senderId, receivedUser, receivedMessage) => {
-            setChat(prev => [...prev, { room: senderId, user: receivedUser, message: receivedMessage, isPrivate: true }]);
-          });
-
-          connection.on('UserList', (users) => {
-            const currentConnectionId = connection.connectionId;
-            const filteredUsers = users.filter(u => u !== currentConnectionId);
-            setActiveUsers(filteredUsers);
-          });
-
-          connection.on('UserJoined', (newConnectionId) => {
-            setActiveUsers(prev => {
-              if (!prev.includes(newConnectionId) && newConnectionId !== connection.connectionId) {
-                return [...prev, newConnectionId];
-              }
-              return prev;
-            });
-          });
-
-          connection.on('UserLeft', (disconnectedId) => {
-            setActiveUsers(prev => prev.filter(u => u !== disconnectedId));
-            setTarget(currentTarget => currentTarget === disconnectedId ? 'Genel' : currentTarget);
-          });
         })
         .catch(error => console.error('Bağlantı hatası: ', error));
 
@@ -117,7 +129,6 @@ function App() {
       alert("Bağlantı henüz hazır değil!");
     }
   };
-  
 
   return (
     <div style={styles.container}>
@@ -155,7 +166,7 @@ function App() {
         ) : (
           <div style={styles.list}>
             {activeUsers.length === 0 ? (
-              <p style={{color: '#94a3b8', fontSize: '12px', padding: '10px'}}>Aktif kullanıcı yok</p>
+              <p style={{color: '#94a3b8', fontSize: '12px', padding: '10px'}}>Aktif başka kullanıcı yok</p>
             ) : (
               activeUsers.map(uId => (
                 <div 
