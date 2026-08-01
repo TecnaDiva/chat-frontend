@@ -6,7 +6,7 @@ const BACKEND_URL = "https://chatbackend20260722112055-ephrhjg2g0ffbvd4.eastus-0
 function App() {
   const [connection, setConnection] = useState(null);
   const [chat, setChat] = useState([]);
-  const [user, setUser] = useState('');
+  const [user, setUser] = useState(() => localStorage.getItem('chatUsername') || '');
   const [message, setMessage] = useState('');
   const [target, setTarget] = useState('Genel');
   const [activeTab, setActiveTab] = useState('rooms');
@@ -52,6 +52,7 @@ function App() {
       });
 
       connection.on('UserList', (users) => {
+        console.log("Gelen kullanıcı listesi:", users);
         setActiveUsers(users);
       });
 
@@ -100,6 +101,7 @@ function App() {
   const handleUsernameChange = (e) => {
     const newName = e.target.value;
     setUser(newName);
+    localStorage.setItem('chatUsername', newName);
     if (connection && connection.state === "Connected" && newName.trim()) {
       connection.invoke("RegisterUser", newName).catch(err => console.error("RegisterUser hatası:", err));
     }
