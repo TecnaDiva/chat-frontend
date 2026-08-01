@@ -73,6 +73,9 @@ function App() {
           console.log('SignalR Bağlantısı Başarıyla Kuruldu!');
           connection.invoke("JoinRoom", "Genel").catch(err => console.error(err));
           connection.invoke("JoinRoom", "Yazılım").catch(err => console.error(err));
+          if (user.trim()) {
+            connection.invoke("RegisterUser", user).catch(err => console.error(err));
+          }
         })
         .catch(error => console.error('Bağlantı hatası: ', error));
 
@@ -92,12 +95,14 @@ function App() {
     }
   }, [connection]);
 
-  // Kullanıcı adı girildiğinde/sunucuya bildir
-  useEffect(() => {
-    if (connection && connection.state === "Connected" && user.trim()) {
-      connection.invoke("RegisterUser", user).catch(err => console.error(err));
+  // Kullanıcı adı inputu değiştikçe sunucuya bildir
+  const handleUsernameChange = (e) => {
+    const newName = e.target.value;
+    setUser(newName);
+    if (connection && connection.state === "Connected" && newName.trim()) {
+      connection.invoke("RegisterUser", newName).catch(err => console.error("RegisterUser hatası:", err));
     }
-  }, [connection, connection?.state, user]);
+  };
 
   const handleSelectTarget = async (selectedTarget) => {
     setTarget(selectedTarget);
@@ -254,7 +259,7 @@ function App() {
             type="text"
             placeholder="Adınız..."
             value={user}
-            onChange={(e) => setUser(e.target.value)}
+            onChange={handleUsernameChange}
             style={styles.userNameInput}
           />
           <input
