@@ -228,7 +228,7 @@ function App() {
                     {msg.user} {msg.isPrivate && <span style={{ color: '#f87171' }}>(Özel)</span>}
                   </div>
                   <div>{msg.message}</div>
-                  {isMe && msg.id && (
+                  {msg.id && (
                     <button onClick={() => handleDelete(msg.id)} style={styles.deleteBtn} title="Mesajı sil">
                       🗑️
                     </button>
