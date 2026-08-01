@@ -93,6 +93,7 @@ function App() {
         connection.off('UserLeft');
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connection]);
 
   // Kullanıcı adı inputu değiştikçe sunucuya bildir
