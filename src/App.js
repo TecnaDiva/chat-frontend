@@ -6,7 +6,7 @@ const BACKEND_URL = "https://chatbackend20260722112055-ephrhjg2g0ffbvd4.eastus-0
 function App() {
   const [connection, setConnection] = useState(null);
   const [chat, setChat] = useState([]);
-  const [user, setUser] = useState(() => localStorage.getItem('chatUsername') || '');
+  const [user, setUser] = useState(() => sessionStorage.getItem('chatUsername') || '');
   const [message, setMessage] = useState('');
   const [target, setTarget] = useState('Genel');
   const [activeTab, setActiveTab] = useState('rooms');
@@ -80,11 +80,13 @@ function App() {
   }, [connection]);
 
   const handleUsernameChange = (e) => {
-    const newName = e.target.value;
-    setUser(newName);
-    localStorage.setItem('chatUsername', newName);
-    if (connection && connection.state === "Connected" && newName.trim()) {
-      connection.invoke("RegisterUser", newName).catch(err => console.error("RegisterUser hatası:", err));
+    setUser(e.target.value);
+  };
+
+  const handleUsernameBlur = () => {
+    sessionStorage.setItem('chatUsername', user);
+    if (connection && connection.state === "Connected" && user.trim()) {
+      connection.invoke("RegisterUser", user).catch(err => console.error("RegisterUser hatası:", err));
     }
   };
 
@@ -243,6 +245,7 @@ function App() {
             placeholder="Adınız..."
             value={user}
             onChange={handleUsernameChange}
+            onBlur={handleUsernameBlur}
             style={styles.userNameInput}
           />
           <input
